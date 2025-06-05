@@ -51,7 +51,7 @@ def main(args):
     output_binary_buffered_file = os.path.join(*[output_dir,'tmp_binary_buffered.tif'])
     output_binary_buffered_flipped_file = os.path.join(*[output_dir,'tmp_binary_buffered_flipped.tif'])
     output_binary_buffered_flipped_4326_file = os.path.join(*[output_dir,'tmp_binary_buffered_flipped_4326.tif'])
-    osm_clipped_file = os.path.join(output_dir,'tmp_osm_clipped.shp')
+    osm_clipped_file = os.path.join(output_dir,'tmp_coast_clipped.shp')
 
     output_polygon_full = os.path.join(output_dir,'tmp_polygon_full.shp')
     # output_polygon_clipped = os.path.join(output_dir,'tmp_polygon_clipped.shp')
@@ -113,7 +113,8 @@ def main(args):
 
     # Clean up temporary files
     tmp_files = []
-    glob_patterns = ['tmp_binary.tif', 'tmp_binary_resampled.tif', 'tmp_binary_resampled_4326.tif', 'tmp_coast.*','tmp_outline.*']
+    glob_patterns = ['tmp_binary.tif','zeros_array.tif', 'tmp_binary_buffered.tif', 'tmp_binary_buffered_flipped.tif','tmp_binary_buffered_flipped_4326.tif'
+                     'tmp_coast_clipped.*','tmp_polygon_full.*']
     for p in glob_patterns:
         tmp_files.extend(glob.glob(os.path.join(output_dir, p)))
     for tmp_file in tmp_files:
