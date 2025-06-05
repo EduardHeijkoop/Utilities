@@ -114,7 +114,7 @@ def main(args):
     if min_size > 0:
         import geopandas as gpd
         gdf = gpd.read_file(output_file)
-        gdf = gdf[gdf.to_crs['EPSG:3857'].area > min_size]
+        gdf = gdf[gdf.to_crs('EPSG:3857').area > min_size].reset_index(drop=True)
         gdf.to_file(output_file)
 
     # Clean up temporary files
