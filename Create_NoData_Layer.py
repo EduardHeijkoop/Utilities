@@ -113,7 +113,7 @@ def main(args):
 
     # Clean up temporary files
     tmp_files = []
-    glob_patterns = ['tmp_binary.tif','zeros_array.tif', 'tmp_binary_buffered.tif', 'tmp_binary_buffered_flipped.tif','tmp_binary_buffered_flipped_4326.tif'
+    glob_patterns = ['tmp_binary.tif','zeros_array.tif', 'tmp_binary_buffered.tif', 'tmp_binary_buffered_flipped.tif','tmp_binary_buffered_flipped_4326.tif',
                      'tmp_coast_clipped.*','tmp_polygon_full.*']
     for p in glob_patterns:
         tmp_files.extend(glob.glob(os.path.join(output_dir, p)))
