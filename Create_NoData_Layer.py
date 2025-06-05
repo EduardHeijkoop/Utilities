@@ -95,7 +95,7 @@ def main(args):
     lon_min,lon_max,lat_min,lat_max = get_raster_extents(output_binary_buffered_file,global_local_flag='global')
     # print(f'Global extent: {lon_min}, {lon_max}, {lat_min}, {lat_max}')
 
-    osm_clip_command = f'ogr2ogr --quiet -f "ESRI Shapefile" -clipsrc {lon_min} {lat_min} {lon_max} {lat_max} {osm_clipped_file} {coastline_file}'
+    osm_clip_command = f'ogr2ogr -overwrite --quiet -f "ESRI Shapefile" -clipsrc {lon_min} {lat_min} {lon_max} {lat_max} {osm_clipped_file} {coastline_file}'
     subprocess.run(osm_clip_command,shell=True,check=True)
 
     reproject_command = f'gdalwarp --quiet -overwrite -t_srs EPSG:4326 -co "COMPRESS=LZW" -co "BIGTIFF=IF_SAFER" {output_binary_buffered_flipped_file} {output_binary_buffered_flipped_4326_file}'
@@ -103,12 +103,12 @@ def main(args):
 
 
     if coastline_file is not None:
-        polygonize_command = f'gdal_polygonize.py -mask {output_binary_buffered_flipped_4326_file} -q {output_binary_buffered_flipped_4326_file} {output_polygon_full}'
+        polygonize_command = f'gdal_polygonize.py -overwrite -mask {output_binary_buffered_flipped_4326_file} -q {output_binary_buffered_flipped_4326_file} {output_polygon_full}'
         subprocess.run(polygonize_command,shell=True,check=True)
-        clip_command = f'ogr2ogr --quiet {output_file} {output_polygon_full} -clipsrc {osm_clipped_file}'
+        clip_command = f'ogr2ogr -overwrite --quiet {output_file} {output_polygon_full} -clipsrc {osm_clipped_file}'
         subprocess.run(clip_command,shell=True,check=True)
     else:
-        polygonize_command = f'gdal_polygonize.py -mask {output_binary_buffered_flipped_4326_file} -q {output_binary_buffered_flipped_4326_file} {output_file}'
+        polygonize_command = f'gdal_polygonize.py -overwrite -mask {output_binary_buffered_flipped_4326_file} -q {output_binary_buffered_flipped_4326_file} {output_file}'
         subprocess.run(polygonize_command,shell=True,check=True)
 
     if min_size > 0:
