@@ -5,7 +5,6 @@ from osgeo import gdal,gdalconst,osr
 import os
 import subprocess
 import glob
-import geopandas as gpd
 import sys
 sys.path.insert(0,'../DEM')
 
@@ -19,6 +18,7 @@ def main(args):
     coastline_file = args.coastline
     buffer_val = args.buffer
     intermediate_resolution = args.resolution
+    min_size = args.min_size
     # reverse_flag = args.reverse
 
 
@@ -111,6 +111,12 @@ def main(args):
         polygonize_command = f'gdal_polygonize.py -mask {output_binary_buffered_flipped_4326_file} -q {output_binary_buffered_flipped_4326_file} {output_file}'
         subprocess.run(polygonize_command,shell=True,check=True)
 
+    if min_size > 0:
+        import geopandas as gpd
+        gdf = gpd.read_file(output_file)
+        gdf = gdf[gdf.to_crs['EPSG:3857'].area > min_size]
+        gdf.to_file(output_file)
+
     # Clean up temporary files
     tmp_files = []
     glob_patterns = ['tmp_binary.tif','zeros_array.tif', 'tmp_binary_buffered.tif', 'tmp_binary_buffered_flipped.tif','tmp_binary_buffered_flipped_4326.tif',
@@ -126,8 +132,9 @@ def parse_arguments(args):
     parser.add_argument('--raster',help='Input raster',required=True)
     parser.add_argument('--output_file',help='Output file name',default='tmp_nodata.shp')
     parser.add_argument('--coastline',help='Coastline vector file',default=None)
-    parser.add_argument('--buffer',help='Buffer distance in meters',default=1e3,type=float)
+    parser.add_argument('--buffer',help='Buffer distance in meters',default=1e4,type=float)
     parser.add_argument('--resolution',help='Intermediate spatial resolution in meters',default=10,type=float)
+    parser.add_argument('--min_size',help='Minimum size of final polygon\' features',default=0,type=float)
     # parser.add_argument('--reverse',help='Reverse action, i.e. create layer where there is data',action='store_true',default=False)
     return parser.parse_args(args)
 
