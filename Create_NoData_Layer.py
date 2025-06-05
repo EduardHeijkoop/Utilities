@@ -6,7 +6,6 @@ import os
 import subprocess
 import glob
 import geopandas as gpd
-import configparser
 import sys
 sys.path.insert(0,'../DEM')
 
@@ -15,16 +14,13 @@ from dem_utils import raster_to_geotiff,get_raster_extents,resample_raster
 
 def main(args):
     args = parse_arguments(args)
-    config_file = args.config
     input_raster = args.raster
     output_file = args.output_file
     coastline_file = args.coastline
     buffer_val = args.buffer
     intermediate_resolution = args.resolution
-    reverse_flag = args.reverse
+    # reverse_flag = args.reverse
 
-    config = configparser.ConfigParser()
-    config.read(config_file)
 
     if not os.path.isfile(input_raster):
         raise RuntimeError(f'Input raster file does not exist: {os.path.basename(input_raster)}')
@@ -126,13 +122,12 @@ def main(args):
 
 def parse_arguments(args):
     parser = argparse.ArgumentParser()
-    parser.add_argument('--config',help='Path to config file',default='utils_config.ini')
     parser.add_argument('--raster',help='Input raster',required=True)
     parser.add_argument('--output_file',help='Output file name',default='tmp_nodata.shp')
     parser.add_argument('--coastline',help='Coastline vector file',default=None)
     parser.add_argument('--buffer',help='Buffer distance in meters',default=1e3,type=float)
     parser.add_argument('--resolution',help='Intermediate spatial resolution in meters',default=10,type=float)
-    parser.add_argument('--reverse',help='Reverse action, i.e. create layer where there is data',action='store_true',default=False)
+    # parser.add_argument('--reverse',help='Reverse action, i.e. create layer where there is data',action='store_true',default=False)
     return parser.parse_args(args)
 
 
