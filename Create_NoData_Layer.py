@@ -19,6 +19,7 @@ def main(args):
     buffer_val = args.buffer
     intermediate_resolution = args.resolution
     min_size = args.min_size
+    keep_tmp_flag = args.keep_tmp
     # reverse_flag = args.reverse
 
 
@@ -51,7 +52,7 @@ def main(args):
     output_binary_buffered_file = os.path.join(*[output_dir,'tmp_binary_buffered.tif'])
     output_binary_buffered_flipped_file = os.path.join(*[output_dir,'tmp_binary_buffered_flipped.tif'])
     output_binary_buffered_flipped_4326_file = os.path.join(*[output_dir,'tmp_binary_buffered_flipped_4326.tif'])
-    osm_clipped_file = os.path.join(output_dir,'tmp_coast_clipped.shp')
+    coast_clipped_file = os.path.join(output_dir,'tmp_coast_clipped.shp')
 
     output_polygon_full = os.path.join(output_dir,'tmp_polygon_full.shp')
     # output_polygon_clipped = os.path.join(output_dir,'tmp_polygon_clipped.shp')
@@ -87,25 +88,19 @@ def main(args):
     raster_to_geotiff(x_array_buffered,y_array_buffered,arr,epsg_code,output_zeros_array)
     resample_raster(output_binary_file,output_zeros_array,output_binary_buffered_file,resample_method='nearest',compress=True,nodata=0,quiet_flag=True,dtype='int')
 
-    # flip_command = f'gdal_calc.py --quiet --overwrite -A {output_binary_buffered_file} --calc="-1*(A-1)" --outfile="{output_binary_buffered_flipped_file}" --co "COMPRESS=LZW" --co "BIGTIFF=IF_SAFER" --NoDataValue=0'
     flip_command = f'gdal_calc.py --quiet --overwrite -A {output_binary_buffered_file} --calc="A==0" --outfile="{output_binary_buffered_flipped_file}" --co "COMPRESS=LZW" --co "BIGTIFF=IF_SAFER" --type Byte'
     subprocess.run(flip_command,shell=True,check=True)
-
-
-    lon_min,lon_max,lat_min,lat_max = get_raster_extents(output_binary_buffered_file,global_local_flag='global')
-    # print(f'Global extent: {lon_min}, {lon_max}, {lat_min}, {lat_max}')
-
-    osm_clip_command = f'ogr2ogr -overwrite --quiet -f "ESRI Shapefile" -clipsrc {lon_min} {lat_min} {lon_max} {lat_max} {osm_clipped_file} {coastline_file}'
-    subprocess.run(osm_clip_command,shell=True,check=True)
 
     reproject_command = f'gdalwarp --quiet -overwrite -t_srs EPSG:4326 -co "COMPRESS=LZW" -co "BIGTIFF=IF_SAFER" {output_binary_buffered_flipped_file} {output_binary_buffered_flipped_4326_file}'
     subprocess.run(reproject_command,shell=True,check=True)
 
-
     if coastline_file is not None:
+        lon_min,lon_max,lat_min,lat_max = get_raster_extents(output_binary_buffered_file,global_local_flag='global')
+        osm_clip_command = f'ogr2ogr -overwrite --quiet -f "ESRI Shapefile" -clipsrc {lon_min} {lat_min} {lon_max} {lat_max} {coast_clipped_file} {coastline_file}'
+        subprocess.run(osm_clip_command,shell=True,check=True)
         polygonize_command = f'gdal_polygonize.py -overwrite -mask {output_binary_buffered_flipped_4326_file} -q {output_binary_buffered_flipped_4326_file} {output_polygon_full}'
         subprocess.run(polygonize_command,shell=True,check=True)
-        clip_command = f'ogr2ogr -overwrite --quiet {output_file} {output_polygon_full} -clipsrc {osm_clipped_file}'
+        clip_command = f'ogr2ogr -overwrite --quiet {output_file} {output_polygon_full} -clipsrc {coast_clipped_file}'
         subprocess.run(clip_command,shell=True,check=True)
     else:
         polygonize_command = f'gdal_polygonize.py -overwrite -mask {output_binary_buffered_flipped_4326_file} -q {output_binary_buffered_flipped_4326_file} {output_file}'
@@ -118,14 +113,17 @@ def main(args):
         gdf.to_file(output_file)
 
     # Clean up temporary files
-    tmp_files = []
-    glob_patterns = ['tmp_binary.tif','zeros_array.tif', 'tmp_binary_buffered.tif', 'tmp_binary_buffered_flipped.tif','tmp_binary_buffered_flipped_4326.tif',
-                     'tmp_coast_clipped.*','tmp_polygon_full.*']
-    for p in glob_patterns:
-        tmp_files.extend(glob.glob(os.path.join(output_dir, p)))
-    for tmp_file in tmp_files:
-        if os.path.isfile(tmp_file):
-            os.remove(tmp_file)
+    if keep_tmp_flag == True:
+        pass
+    else:
+        tmp_files = []
+        glob_patterns = ['tmp_binary.tif','zeros_array.tif', 'tmp_binary_buffered.tif', 'tmp_binary_buffered_flipped.tif','tmp_binary_buffered_flipped_4326.tif',
+                        'tmp_coast_clipped.*','tmp_polygon_full.*']
+        for p in glob_patterns:
+            tmp_files.extend(glob.glob(os.path.join(output_dir, p)))
+        for tmp_file in tmp_files:
+            if os.path.isfile(tmp_file):
+                os.remove(tmp_file)
 
 def parse_arguments(args):
     parser = argparse.ArgumentParser()
@@ -135,6 +133,7 @@ def parse_arguments(args):
     parser.add_argument('--buffer',help='Buffer distance in meters',default=1e4,type=float)
     parser.add_argument('--resolution',help='Intermediate spatial resolution in meters',default=10,type=float)
     parser.add_argument('--min_size',help='Minimum size of final polygon\' features',default=0,type=float)
+    parser.add_argument('--keep_tmp',help='Keep temporary files',action='store_true',default=False)
     # parser.add_argument('--reverse',help='Reverse action, i.e. create layer where there is data',action='store_true',default=False)
     return parser.parse_args(args)
 
